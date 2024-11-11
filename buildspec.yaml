@@ -47,7 +47,7 @@ phases:
       - ./dependency-check.sh --scan . --format ALL
       - echo "Build completed successfully!"
       - echo "Running SonarQube analysis result"
-      - sonar-scanner -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://3.109.31.79:9000/ -Dsonar.login=$SONAR_TOKEN -X
+      - sonar-scanner -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://3.109.31.79:9000 -Dsonar.login=$SONAR_TOKEN -X
       #  - aws ses send-email --from "mihirpachpande7@gmail.com" --to "mihirpachpande7@gmail.com" --subject "CodeBuild Status:$CODEBUILD_BUILD_ID" --text "Build status:$CODEBUILD_BUILD_STATUS" --region "ap-south-1" 
       # Update with your preferred AWS region
 
