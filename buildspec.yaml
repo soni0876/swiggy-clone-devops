@@ -34,7 +34,7 @@ phases:
       - echo "Running tests..."
       - echo "Building Docker image..."
       - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin 
-      - docker build -t "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" .
+      - docker build -t "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" 
       - docker push "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest"
   post_build:
     commands:
@@ -50,16 +50,7 @@ phases:
       - sonar-scanner -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://13.233.236.44:9000/
       #  - aws ses send-email --from "mihirpachpande7@gmail.com" --to "mihirpachpande7@gmail.com" --subject "CodeBuild Status:$CODEBUILD_BUILD_ID" --text "Build status:$CODEBUILD_BUILD_STATUS" --region "ap-south-1" 
       # Update with your preferred AWS region
-
-post_build:
-  commands:
-    - aws ses send-email \
-        --from "mihirpachpande7@gmail.com" \
-        --to "mihirpachpande7@gmail.com" \
-        --subject "CodeBuild Status:$CODEBUILD_BUILD_ID" \
-        --text "Build status:$CODEBUILD_BUILD_STATUS" \
-        --region "ap-south-1" # Update with your preferred AWS region
-
+      
 
 artifacts:
   files:
