@@ -8,6 +8,12 @@ env:
     SONAR_TOKEN: /cicd/sonar/sonar-token
 phases:
   install:
+    commands:
+      - yum remove -y java
+      - amazon-linux-extras install -y java-openjdk17
+      - export JAVA_HOME=/usr/lib/jvm/java-17
+      - export PATH=$JAVA_HOME/bin:$PATH
+      - java -version 
     runtime-versions:
       python: 3.11
       java: corretto17
