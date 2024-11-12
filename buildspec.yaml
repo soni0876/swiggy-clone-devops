@@ -6,18 +6,13 @@ env:
     DOCKER_REGISTRY_PASSWORD: /cicd/docker-credentials/password
     DOCKER_REGISTRY_URL: /cicd/docker-registry/url
     SONAR_TOKEN: /cicd/sonar/sonar-token
+
 phases:
   install:
-    commands:
-      - yum install -y java-17-amazon-corretto
-      - ls /usr/lib/jvm/
-      - export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.x86_64
-      - export PATH=$JAVA_HOME/bin:$PATH
-      - echo "JAVA_HOME is set to $JAVA_HOME"
-      - java -version
     runtime-versions:
       python: 3.11
       java: corretto17
+
   pre_build:
     commands:
       - echo "Installing dependencies..."
@@ -35,33 +30,73 @@ phases:
       - unzip -o $HOME/.sonar/sonar-scanner.zip -d $HOME/.sonar/
       - export PATH=$SONAR_SCANNER_HOME/bin:$PATH
       - export SONAR_SCANNER_OPTS="-server"
+      - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin "$DOCKER_REGISTRY_URL"
 
   build:
     commands:
       - echo "Running tests..."
       - echo "Building Docker image..."
-      - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin 
-      - docker buildx build -t "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" .
+      - cd Swiggy_clone
+      - docker build -t "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" .
       - docker push "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest"
+
+    # post_build:
+    #   commands:
+    #    - echo "Running tests..."
+    #    - echo "Building Docker image..."
+    #   #  - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin "$DOCKER_REGISTRY_URL"
+    #    - docker build -t "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" .
+    #    - docker push "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest"
+
+
   post_build:
     commands:
       - echo "Performing Trivy image scan after building the image..."
-      #  - aws ses send-email --from "mihirpachpande7@gmail.com" --to "mihirpachpande7@gmail.com" --subject "CodeBuild Status:$CODEBUILD_BUILD_ID" --text "Build status:$CODEBUILD_BUILD_STATUS" --region "ap-south-1" 
-
       - trivy image "$DOCKER_REGISTRY_USERNAME/swiggy:latest" >> trivyimage.txt
       - echo "Running OWASP Dependency-Check scan..."
-      - cd dependency-check/bin
-      - export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.x86_64
-      - export PATH=$JAVA_HOME/bin:$PATH
+    
+      # Download the dependency-check zip from S3
+      - aws s3 cp s3://sree-codebuild1/Swiggy_Clone/dependency-check-7.0.2-release.zip ./dependency-check.zip
+    
+      # Unzip the downloaded file
+      - unzip ./dependency-check.zip -d ./dependency-check
+      - echo "Listing files in dependency-check folder:"
+      # - ls -al ./dependency-check
+      - ls -R ./dependency-check
+
+    
+      # Navigate to the extracted directory
+      - cd ./dependency-check/dependency-check/bin
+
+    
+      # Make the script executable
+      - chmod +x ./dependency-check.sh
+    
+      # Run the dependency-check scan
       - ./dependency-check.sh --scan . --format ALL
       - echo "Build completed successfully!"
+    
       - echo "Running SonarQube analysis result"
-      - sonar-scanner -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://3.109.31.79:9000 -Dsonar.login=$SONAR_TOKEN -X
-      #  - aws ses send-email --from "mihirpachpande7@gmail.com" --to "mihirpachpande7@gmail.com" --subject "CodeBuild Status:$CODEBUILD_BUILD_ID" --text "Build status:$CODEBUILD_BUILD_STATUS" --region "ap-south-1" 
-      # Update with your preferred AWS region
+      # - sonar-scanner \
+      #   - Dsonar.projectKey=Swiggy \
+      #   - Dsonar.sources=. \
+      #   - Dsonar.host.url=http://13.201.85.180:9000
+      - sonar-scanner -Dsonar.projectKey=Swiggy -Dsonar.sources=. -Dsonar.host.url=http://3.109.31.79:9000 -Dsonar.login="$SONAR_TOKEN" -X
 
+
+
+
+# post_build:
+#   commands:
+#     - |
+#       aws ses send-email \
+#         --from "chetany31@gmail.com" \
+#         --to "chetany31@gmail.com" \
+#         --subject "CodeBuild Status: $CODEBUILD_BUILD_ID" \
+#         --text "Build status: $CODEBUILD_BUILD_STATUS" \
+#         --region "ap-south-1"  
 
 artifacts:
   files:
-    - '**/*'
-    #  - appspec.yaml
+    - '**/*'  # Yeh sab files ko upload karega
+    # - /appspec.yaml
