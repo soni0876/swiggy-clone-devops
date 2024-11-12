@@ -9,11 +9,10 @@ env:
 phases:
   install:
     commands:
-      - yum remove -y java
-      - amazon-linux-extras install -y java-openjdk17
-      - export JAVA_HOME=/usr/lib/jvm/java-17
+      - yum install -y java-17-amazon-corretto
+      - export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto
       - export PATH=$JAVA_HOME/bin:$PATH
-      - java -version 
+      - java -version
     runtime-versions:
       python: 3.11
       java: corretto17
