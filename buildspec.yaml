@@ -9,7 +9,7 @@ env:
 phases:
   install:
     commands:
-       - yum install -y java-17-amazon-corretto
+      - yum install -y java-17-amazon-corretto
       - export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto
       - export PATH=$JAVA_HOME/bin:$PATH
       - echo "JAVA_HOME is set to $JAVA_HOME"
