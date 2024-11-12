@@ -11,7 +11,7 @@ phases:
     commands:
       - yum install -y java-17-amazon-corretto
       - ls /usr/lib/jvm/
-      - export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto
+      - export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.x86_64
       - export PATH=$JAVA_HOME/bin:$PATH
       - echo "JAVA_HOME is set to $JAVA_HOME"
       - java -version
@@ -51,7 +51,7 @@ phases:
       - trivy image "$DOCKER_REGISTRY_USERNAME/swiggy:latest" >> trivyimage.txt
       - echo "Running OWASP Dependency-Check scan..."
       - cd dependency-check/bin
-      - export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto
+      - export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.x86_64
       - export PATH=$JAVA_HOME/bin:$PATH
       - ./dependency-check.sh --scan . --format ALL
       - echo "Build completed successfully!"
