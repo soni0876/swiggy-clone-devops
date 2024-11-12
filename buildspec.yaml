@@ -9,9 +9,10 @@ env:
 phases:
   install:
     commands:
-      - yum install -y java-17-amazon-corretto
+       - yum install -y java-17-amazon-corretto
       - export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto
       - export PATH=$JAVA_HOME/bin:$PATH
+      - echo "JAVA_HOME is set to $JAVA_HOME"
       - java -version
     runtime-versions:
       python: 3.11
@@ -49,6 +50,8 @@ phases:
       - trivy image "$DOCKER_REGISTRY_USERNAME/swiggy:latest" >> trivyimage.txt
       - echo "Running OWASP Dependency-Check scan..."
       - cd dependency-check/bin
+      - export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto
+      - export PATH=$JAVA_HOME/bin:$PATH
       - ./dependency-check.sh --scan . --format ALL
       - echo "Build completed successfully!"
       - echo "Running SonarQube analysis result"
