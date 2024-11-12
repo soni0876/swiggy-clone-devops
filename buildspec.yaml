@@ -51,6 +51,10 @@ phases:
 
   post_build:
     commands:
+      - echo "Setting JAVA_HOME for SonarScanner"
+      - export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.x86_64
+      - export PATH=$JAVA_HOME/bin:$PATH
+      - java -version  # Verify Java version
       - echo "Performing Trivy image scan after building the image..."
       - trivy image "$DOCKER_REGISTRY_USERNAME/swiggy:latest" >> trivyimage.txt
       - echo "Running OWASP Dependency-Check scan..."
