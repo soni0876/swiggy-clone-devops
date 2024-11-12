@@ -36,7 +36,7 @@ phases:
     commands:
       - echo "Running tests..."
       - echo "Building Docker image..."
-      #  - cd Swiggy_clone
+      - cd Swiggy_clone
       - docker build -t "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" .
       - docker push "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest"
 
@@ -51,10 +51,6 @@ phases:
 
   post_build:
     commands:
-      - echo "Setting JAVA_HOME for SonarScanner"
-      - export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.x86_64
-      - export PATH=$JAVA_HOME/bin:$PATH
-      - java -version  # Verify Java version
       - echo "Performing Trivy image scan after building the image..."
       - trivy image "$DOCKER_REGISTRY_USERNAME/swiggy:latest" >> trivyimage.txt
       - echo "Running OWASP Dependency-Check scan..."
@@ -85,7 +81,7 @@ phases:
       #   - Dsonar.projectKey=Swiggy \
       #   - Dsonar.sources=. \
       #   - Dsonar.host.url=http://13.201.85.180:9000
-      - sonar-scanner -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://3.109.31.79:9000 -Dsonar.login="$SONAR_TOKEN" -X
+      - sonar-scanner -Dsonar.projectKey=Swiggy -Dsonar.sources=. -Dsonar.host.url=http://3.109.31.79:9000 -Dsonar.login="$SONAR_TOKEN" -X
 
 
 
