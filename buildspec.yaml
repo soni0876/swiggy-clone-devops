@@ -56,7 +56,7 @@ phases:
       - echo "Running OWASP Dependency-Check scan..."
     
       # Download the dependency-check zip from S3
-      - aws s3 cp s3://sree-codebuild1/Swiggy_Clone/dependency-check-7.0.2-release.zip ./dependency-check.zip
+      - aws s3 cp s3://swiggy-buck/Swiggy_Clone/dependency-check-7.0.2-release.zip ./dependency-check.zip
     
       # Unzip the downloaded file
       - unzip ./dependency-check.zip -d ./dependency-check
@@ -81,7 +81,7 @@ phases:
       #   - Dsonar.projectKey=Swiggy \
       #   - Dsonar.sources=. \
       #   - Dsonar.host.url=http://13.201.85.180:9000
-      - sonar-scanner -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://3.109.31.79:9000 -Dsonar.login=sqp_dd60be0dbdffd2284208067680592ea933dddb2e -X
+      - sonar-scanner -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://3.108.242.62:9000 -Dsonar.login=sqp_e2cd9ea6a1768c602a58574c802520c87e45e4c2 -X
 
 
 
@@ -90,13 +90,13 @@ phases:
 #   commands:
 #     - |
 #       aws ses send-email \
-#         --from "chetany31@gmail.com" \
-#         --to "chetany31@gmail.com" \
+#         --from "mihirpachpande7@gmail.com" \
+#         --to "mihirpachpande7@gmail.com" \
 #         --subject "CodeBuild Status: $CODEBUILD_BUILD_ID" \
 #         --text "Build status: $CODEBUILD_BUILD_STATUS" \
 #         --region "ap-south-1"  
 
 artifacts:
   files:
-    - '**/*'  # Yeh sab files ko upload karega
-    # - /appspec.yaml
+    #- '**/*'  # copy all files 
+    - appspec.yaml
