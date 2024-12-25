@@ -36,7 +36,7 @@ phases:
     commands:
       - echo "Running tests..."
       - echo "Building Docker image..."
-      #  - cd Swiggy_clone
+      - cd swiggy-clone-devops
       - docker build -t "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" .
       - docker push "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest"
 
@@ -81,7 +81,7 @@ phases:
       #   - Dsonar.projectKey=Swiggy \
       #   - Dsonar.sources=. \
       #   - Dsonar.host.url=http://13.201.85.180:9000
-      - sonar-scanner -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://3.108.242.62:9000 -Dsonar.login=sqp_e2cd9ea6a1768c602a58574c802520c87e45e4c2 -X
+      - sonar-scanner -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://43.204.72.28:9000 -Dsonar.login=sqp_3238aeb5ad5d75b355f914b6cc4ebfbd93c59d55 -X
 
 
 
