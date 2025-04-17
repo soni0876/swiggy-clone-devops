@@ -1,5 +1,6 @@
 version: 0.2
 
+# Environment variables from AWS Systems Manager Parameter Store
 env:
   parameter-store:
     DOCKER_REGISTRY_USERNAME: /cicd/docker-credentials/username
@@ -12,91 +13,68 @@ phases:
     runtime-versions:
       python: 3.11
       java: corretto17
+    commands:
+      - echo "Installation phase started..."
 
   pre_build:
     commands:
-      - echo "Installing dependencies..."
-      - echo "Performing Trivy file scan before building the image..."
+      - echo "Installing Trivy for vulnerability scanning..."
       - wget https://github.com/aquasecurity/trivy/releases/download/v0.19.2/trivy_0.19.2_Linux-64bit.tar.gz
       - tar zxvf trivy_0.19.2_Linux-64bit.tar.gz
       - export PATH=$PATH:$PWD
+
+      - echo "Running Trivy filesystem scan..."
       - trivy filesystem --exit-code 0 --no-progress . >> trivyfilescan.txt
-      - echo "Downloading and installing OWASP Dependency-Check..."
+
+      - echo "Installing OWASP Dependency-Check..."
       - wget https://github.com/jeremylong/DependencyCheck/releases/download/v7.0.2/dependency-check-7.0.2-release.zip
       - unzip dependency-check-7.0.2-release.zip
+
+      - echo "Installing SonarQube Scanner..."
       - export SONAR_SCANNER_VERSION=4.7.0.2747
       - export SONAR_SCANNER_HOME=$HOME/.sonar/sonar-scanner-$SONAR_SCANNER_VERSION-linux
       - curl --create-dirs -sSLo $HOME/.sonar/sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_SCANNER_VERSION-linux.zip
       - unzip -o $HOME/.sonar/sonar-scanner.zip -d $HOME/.sonar/
       - export PATH=$SONAR_SCANNER_HOME/bin:$PATH
       - export SONAR_SCANNER_OPTS="-server"
+
+      - echo "Logging into Docker registry..."
       - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin "$DOCKER_REGISTRY_URL"
 
   build:
     commands:
-      - echo "Running tests..."
       - echo "Building Docker image..."
-      #- cd swiggy-clone-devops
       - docker build -t "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" .
+
+      - echo "Pushing Docker image to registry..."
       - docker push "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest"
-
-    # post_build:
-    #   commands:
-    #    - echo "Running tests..."
-    #    - echo "Building Docker image..."
-    #   #  - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin "$DOCKER_REGISTRY_URL"
-    #    - docker build -t "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" .
-    #    - docker push "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest"
-
 
   post_build:
     commands:
-      - echo "Performing Trivy image scan after building the image..."
-      - trivy image "$DOCKER_REGISTRY_USERNAME/swiggy:latest" >> trivyimage.txt
-      - echo "Running OWASP Dependency-Check scan..."
-    
-      # Download the dependency-check zip from S3
+      - echo "Running Trivy image scan..."
+      - trivy image "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" >> trivyimage.txt
+
+      - echo "Downloading Dependency-Check from S3..."
       - aws s3 cp s3://swiggy-buck/Swiggy/dependency-check-7.0.2-release.zip ./dependency-check.zip
-    
-      # Unzip the downloaded file
       - unzip ./dependency-check.zip -d ./dependency-check
-      - echo "Listing files in dependency-check folder:"
-      # - ls -al ./dependency-check
-      - ls -R ./dependency-check
 
-    
-      # Navigate to the extracted directory
-      - cd ./dependency-check/dependency-check/bin
+      - echo "Running OWASP Dependency-Check..."
+      - chmod +x ./dependency-check/dependency-check/bin/dependency-check.sh
+      - ./dependency-check/dependency-check/bin/dependency-check.sh --scan . --format ALL
 
-    
-      # Make the script executable
-      - chmod +x ./dependency-check.sh
-    
-      # Run the dependency-check scan
-      - ./dependency-check.sh --scan . --format ALL
-      - echo "Build completed successfully!"
-    
-      - echo "Running SonarQube analysis result"
-      # - sonar-scanner \
-      #   - Dsonar.projectKey=Swiggy \
-      #   - Dsonar.sources=. \
-      #   - Dsonar.host.url=http://13.201.45.121:9000
-      - sonar-scanner -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://43.204.72.28:9000 -Dsonar.login=sqp_3238aeb5ad5d75b355f914b6cc4ebfbd93c59d55 -X
+      - echo "Running SonarQube analysis..."
+      - sonar-scanner \
+          -Dsonar.projectKey=Swiggy-25 \
+          -Dsonar.sources=. \
+          -Dsonar.host.url=http://13.201.45.121:9000 \
+          -Dsonar.login=$SONAR_TOKEN
 
+      - echo "Build completed successfully."
 
-
-
-# post_build:
-#   commands:
-#     - |
-#       aws ses send-email \
-#         --from "soni0876@gmail.com" \
-#         --to "soni0876@gmail.com" \
-#         --subject "CodeBuild Status: $CODEBUILD_BUILD_ID" \
-#         --text "Build status: $CODEBUILD_BUILD_STATUS" \
-#         --region "ap-south-1"  
-
+# Define which files to preserve and upload as build artifacts
 artifacts:
   files:
-    #- '**/*'  # copy all files 
     - appspec.yaml
+    - trivyfilescan.txt
+    - trivyimage.txt
+    - dependency-check-report.*
