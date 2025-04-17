@@ -8,29 +8,75 @@ env:
     SONAR_TOKEN: /cicd/sonar/sonar-token
 
 phases:
+  install:
+    runtime-versions:
+      python: 3.11
+      java: corretto17
+    commands:
+      - echo "Installation phase started..."
+
   pre_build:
     commands:
       - echo "Checking Docker version..."
       - docker --version
-      - echo "DOCKER_REGISTRY_URL: $DOCKER_REGISTRY_URL"
-      - echo "DOCKER_REGISTRY_USERNAME: $DOCKER_REGISTRY_USERNAME"
       - echo "Logging into Docker registry..."
-      - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin "$DOCKER_REGISTRY_URL"
+      - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin https://index.docker.io
       - echo "Installing Trivy for vulnerability scanning..."
       - wget https://github.com/aquasecurity/trivy/releases/download/v0.19.2/trivy_0.19.2_Linux-64bit.tar.gz
       - tar zxvf trivy_0.19.2_Linux-64bit.tar.gz
       - export PATH=$PATH:$PWD
+
       - echo "Running Trivy filesystem scan..."
       - trivy filesystem --exit-code 0 --no-progress . >> trivyfilescan.txt
+
+      - echo "Installing OWASP Dependency-Check..."
+      - wget https://github.com/jeremylong/DependencyCheck/releases/download/v7.0.2/dependency-check-7.0.2-release.zip
+      - unzip dependency-check-7.0.2-release.zip
+
+      - echo "Installing SonarQube Scanner..."
+      - export SONAR_SCANNER_VERSION=4.7.0.2747
+      - export SONAR_SCANNER_HOME=$HOME/.sonar/sonar-scanner-$SONAR_SCANNER_VERSION-linux
+      - curl --create-dirs -sSLo $HOME/.sonar/sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_SCANNER_VERSION-linux.zip
+      - unzip -o $HOME/.sonar/sonar-scanner.zip -d $HOME/.sonar/
+      - export PATH=$SONAR_SCANNER_HOME/bin:$PATH
+      - export SONAR_SCANNER_OPTS="-server"
+
+      - echo "Logging into Docker registry..."
+      - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin https://index.docker.io
 
   build:
     commands:
       - echo "Building Docker image..."
-      - docker build -t "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" .
-      - echo "Pushing Docker image to registry..."
-      - docker push "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest"
+      - docker build -t "soni0901/swiggy:latest" .
+
+      - echo "Pushing Docker image to Docker Hub..."
+      - docker push "soni0901/swiggy:latest"
 
   post_build:
     commands:
       - echo "Running Trivy image scan..."
-      - trivy image "$DOCKER_REGISTRY_URL/$DOCKER_REGISTRY_USERNAME/swiggy:latest" >> trivyimage.txt
+      - trivy image "soni0901/swiggy:latest" >> trivyimage.txt
+
+      - echo "Downloading Dependency-Check from S3..."
+      - aws s3 cp s3://swiggy-buck/Swiggy/dependency-check-7.0.2-release.zip ./dependency-check.zip
+      - unzip ./dependency-check.zip -d ./dependency-check
+
+      - echo "Running OWASP Dependency-Check..."
+      - chmod +x ./dependency-check/dependency-check/bin/dependency-check.sh
+      - ./dependency-check/dependency-check/bin/dependency-check.sh --scan . --format ALL
+
+      - echo "Running SonarQube analysis..."
+      - sonar-scanner \
+          -Dsonar.projectKey=Swiggy-25 \
+          -Dsonar.sources=. \
+          -Dsonar.host.url=http://13.201.45.121:9000 \
+          -Dsonar.login=$SONAR_TOKEN
+
+      - echo "Build completed successfully."
+
+artifacts:
+  files:
+    - appspec.yaml
+    - trivyfilescan.txt
+    - trivyimage.txt
+    - dependency-check-report.*
