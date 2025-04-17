@@ -80,7 +80,7 @@ phases:
       # - sonar-scanner \
       #   - Dsonar.projectKey=Swiggy \
       #   - Dsonar.sources=. \
-      #   - Dsonar.host.url=http://13.201.85.180:9000
+      #   - Dsonar.host.url=http://13.201.45.121:9000
       - sonar-scanner -Dsonar.projectKey=swiggy -Dsonar.sources=. -Dsonar.host.url=http://43.204.72.28:9000 -Dsonar.login=sqp_3238aeb5ad5d75b355f914b6cc4ebfbd93c59d55 -X
 
 
@@ -90,8 +90,8 @@ phases:
 #   commands:
 #     - |
 #       aws ses send-email \
-#         --from "mihirpachpande7@gmail.com" \
-#         --to "mihirpachpande7@gmail.com" \
+#         --from "soni0876@gmail.com" \
+#         --to "soni0876@gmail.com" \
 #         --subject "CodeBuild Status: $CODEBUILD_BUILD_ID" \
 #         --text "Build status: $CODEBUILD_BUILD_STATUS" \
 #         --region "ap-south-1"  
