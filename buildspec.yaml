@@ -18,6 +18,10 @@ phases:
 
   pre_build:
     commands:
+      - echo "Checking Docker version..."
+      - docker --version
+      - echo "Logging into Docker registry..."
+      - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin "$DOCKER_REGISTRY_URL"
       - echo "Installing Trivy for vulnerability scanning..."
       - wget https://github.com/aquasecurity/trivy/releases/download/v0.19.2/trivy_0.19.2_Linux-64bit.tar.gz
       - tar zxvf trivy_0.19.2_Linux-64bit.tar.gz
